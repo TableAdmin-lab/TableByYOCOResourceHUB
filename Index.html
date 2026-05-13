@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table By Yoco | Resource Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Check for saved theme or system preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+
+        function showDownloadToast(fileName) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.innerText = `Preparing ${fileName} for download...`;
+            toast.classList.remove('translate-y-full', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-full', 'opacity-0');
+            }, 3000);
+
+            // Enhanced PDF Generator
+            setTimeout(() => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const title = fileName.replace('.pdf', '').replace(/_/g, ' ');
+                    const dateStr = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
+                    let pageNum = 1;
+                    let y = 0;
+
+                    function drawHeader() {
+                        doc.setFillColor(15, 23, 42);
+                        doc.rect(0, 0, 210, 35, 'F');
+                        doc.setFillColor(37, 99, 235);
+                        doc.rect(0, 35, 210, 2, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(18);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text('Table By Yoco', 20, 18);
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(148, 163, 184);
+                        doc.text('Resource Hub', 20, 28);
+                    }
+
+                    function drawFooter() {
+                        doc.setDrawColor(226, 232, 240);
+                        doc.line(20, 278, 190, 278);
+                        doc.setFontSize(7);
+                        doc.setTextColor(148, 163, 184);
+                        doc.text('Table By Yoco  |  Resource Hub', 20, 284);
+                        doc.text('Page ' + pageNum, 185, 284);
+                    }
+
+                    function checkPage(needed) {
+                        if (y + needed > 270) {
+                            drawFooter();
+                            doc.addPage();
+                            pageNum++;
+                            drawHeader();
+                            y = 48;
+                        }
+                    }
+
+                    function heading(text, r, g, b) {
+                        checkPage(18);
+                        doc.setFillColor(r, g, b);
+                        doc.roundedRect(20, y - 1, 170, 10, 2, 2, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(text.toUpperCase(), 25, y + 6);
+                        y += 16;
+                    }
+
+                    function subheading(text) {
+                        checkPage(12);
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFontSize(11);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(text, 20, y);
+                        y += 3;
+                        doc.setDrawColor(37, 99, 235);
+                        doc.setLineWidth(0.5);
+                        doc.line(20, y, 80, y);
+                        doc.setLineWidth(0.2);
+                        y += 7;
+                    }
+
+                    function body(text) {
+                        checkPage(7);
+                        doc.setTextColor(71, 85, 105);
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'normal');
+                        const split = doc.splitTextToSize(text, 165);
+                        split.forEach(l => { checkPage(5); doc.text(l, 20, y); y += 5; });
+                        y += 2;
+                    }
+
+                    function bullet(text) {
+                        checkPage(6);
+                        doc.setTextColor(37, 99, 235);
+                        doc.setFontSize(9);
+                        doc.text('•', 24, y);
+                        doc.setTextColor(71, 85, 105);
+                        doc.setFont('helvetica', 'normal');
+                        const split = doc.splitTextToSize(text, 155);
+                        split.forEach((l, i) => { checkPage(5); doc.text(l, 30, y); y += 5; });
+                        y += 1;
+                    }
+
+                    function step(num, text) {
+                        checkPage(7);
+                        doc.setFillColor(37, 99, 235);
+                        doc.circle(25, y - 1.5, 3, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(7);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(String(num), 24, y);
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(text, 32, y);
+                        y += 7;
+                    }
+
+                    function stepDetail(text) {
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFontSize(8);
+                        doc.setFont('helvetica', 'normal');
+                        const split = doc.splitTextToSize(text, 150);
+                        split.forEach(l => { checkPage(5); doc.text(l, 32, y); y += 4.5; });
+                        y += 3;
+                    }
+
+                    function tableRow(cells, isHeader) {
+                        checkPage(8);
+                        const colW = 170 / cells.length;
+                        if (isHeader) {
+                            doc.setFillColor(241, 245, 249);
+                            doc.rect(20, y - 4, 170, 7, 'F');
+                            doc.setFont('helvetica', 'bold');
+                            doc.setTextColor(30, 41, 59);
+                        } else {
+                            doc.setFont('helvetica', 'normal');
+                            doc.setTextColor(71, 85, 105);
+                        }
+                        doc.setFontSize(8);
+                        cells.forEach((c, i) => doc.text(String(c), 22 + i * colW, y));
+                        doc.setDrawColor(226, 232, 240);
+                        doc.line(20, y + 2, 190, y + 2);
+                        y += 7;
+                    }
+
+                    function gap(n) { y += (n || 4); }
+
+                    // === PAGE 1: Cover ===
+                    drawHeader();
+                    y = 55;
+                    doc.setTextColor(15, 23, 42);
+                    doc.setFontSize(22);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(title, 20, y);
+                    y += 4;
+                    doc.setDrawColor(37, 99, 235);
+                    doc.setLineWidth(1);
+                    doc.line(20, y, 90, y);
+                    doc.setLineWidth(0.2);
+                    y += 12;
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Prepared by the Table By Yoco Merchant Success Team', 20, y); y += 14;
+
+                    // === CONTENT BY TYPE ===
+                    if (title === 'Training Guide v2') {
+                        body('Interactive training portal for Table By Yoco front-of-house staff. This guide mirrors the course modules, knowledge base, and lesson documentation available at the online training portal.');
+                        gap(6);
+                        heading('Course Modules', 37, 99, 235);
+                        subheading('Available Training Modules');
+                        body('The training portal organises all learning material into self-paced course modules. Each module contains video lessons, interactive walkthroughs, and assessment checkpoints.');
+                        bullet('Floor management and table layout configuration');
+                        bullet('Split-billing procedures and multi-tender payments');
+                        bullet('Inventory basics, stock counts, and low-stock alerts');
+                        bullet('POS terminal operations — order entry, modifiers, kitchen routing');
+                        bullet('Shift management — opening floats, Z-Reports, cash-up procedures');
+                        bullet('Payment processing — card, cash, voucher, and comp workflows');
+                        subheading('Lesson Selection');
+                        body('Select a module from the portal sidebar to begin. Each lesson includes an overview panel showing objectives, estimated duration, and prerequisites. Progress is tracked automatically per staff login.');
+                        gap(4);
+                        heading('Knowledge Base', 30, 64, 175);
+                        subheading('Frequently Asked Questions');
+                        body('Searchable FAQ section covering common operational questions encountered by staff during service.');
+                        bullet('How to void an item after it has been sent to the kitchen');
+                        bullet('How to transfer a table to another server mid-shift');
+                        bullet('How to apply a manager discount or comp');
+                        bullet('How to reprint a customer receipt from order history');
+                        bullet('How to handle a declined card payment');
+                        bullet('How to merge or split tables for large parties');
+                        subheading('Lesson Documentation');
+                        body('Detailed written guides supplementing each video module. Documentation is searchable and can be printed for offline reference during training shifts.');
+                        gap(4);
+                        heading('Management Center', 22, 163, 74);
+                        subheading('Training Analytics');
+                        body('The Management Center tracks staff engagement with the training platform:');
+                        bullet('Engagement Trend — chart showing lesson completions over time');
+                        bullet('Section Popularity — which modules are accessed most frequently');
+                        bullet('Most Popular Lessons — ranked list of top-viewed training content');
+                        bullet('Category Distribution — breakdown of time spent per module category');
+                        bullet('Recent Activity Log — chronological feed of staff training actions');
+                        gap(4);
+                        heading('Support', 168, 85, 247);
+                        body('For immediate assistance with training or operational questions, contact the Table By Yoco support team via WhatsApp: +27 66 039 2596');
+                        gap(4);
+                        body('Interactive Training Portal: https://tableadmin-lab.github.io/TableTraining/');
+
+                    } else if (title === 'Onboarding Specs') {
+                        body('This document mirrors the TABLE By YOCO Site Setup (Inputs) Onboarding guide hosted on Notion. It covers the complete new-site deployment workflow including format selection, setup sheet inputs, hardware configuration, and go-live verification.');
+                        gap(6);
+                        heading('Site Format Selection', 22, 163, 74);
+                        subheading('Standard vs Pro Setup');
+                        body('Every new Table By Yoco deployment begins with selecting the site format. The format determines which features, hardware, and pricing tiers are available.');
+                        tableRow(['Feature', 'Standard', 'Pro'], true);
+                        tableRow(['Table Count', 'Up to 20', 'Unlimited']);
+                        tableRow(['Staff Accounts', 'Up to 5', 'Unlimited']);
+                        tableRow(['Kitchen Display System', 'Not included', 'Included']);
+                        tableRow(['Multi-Floor Plans', 'Single floor', 'Multiple floors']);
+                        tableRow(['API Reporting Access', 'Basic exports', 'Full API access']);
+                        tableRow(['Inventory Management', 'Basic tracking', 'Advanced + alerts']);
+                        tableRow(['Dedicated Account Manager', 'No', 'Yes']);
+                        gap(4);
+                        heading('Setup Sheet Inputs', 37, 99, 235);
+                        subheading('Required Information');
+                        body('The setup sheet must be completed before deployment. All fields feed directly into the POS configuration:');
+                        bullet('Business legal name and trading name');
+                        bullet('Physical address and GPS coordinates for delivery integration');
+                        bullet('Contact details — owner, manager, and accounts email');
+                        bullet('Operating hours per day of week (including public holidays)');
+                        bullet('Table layout — total count, sections (indoor/outdoor/bar), numbering');
+                        bullet('Menu structure — categories, items, modifiers, pricing');
+                        bullet('Staff list with names, roles, and PIN assignments');
+                        bullet('Payment methods accepted — card, cash, voucher, account');
+                        subheading('Menu Import');
+                        body('Menus can be imported via CSV or XLSX using the Product Loader tool. Required columns: Item Name, Category, Price (excl. VAT), VAT rate, Modifiers. Optional: PLU codes, images, descriptions.');
+                        gap(4);
+                        heading('Video Walkthroughs', 168, 85, 247);
+                        subheading('Onboarding Video Series');
+                        body('Step-by-step video guides are provided on the Notion page covering each phase of deployment:');
+                        step(1, 'Format selection and pricing overview');
+                        step(2, 'Completing the setup sheet — field-by-field walkthrough');
+                        step(3, 'Hardware unboxing and physical installation');
+                        step(4, 'Wi-Fi and printer network configuration');
+                        step(5, 'POS software setup — importing menu, creating staff accounts');
+                        step(6, 'Go-live checklist — test orders, payments, and kitchen routing');
+                        gap(4);
+                        heading('Go-Live & Support', 245, 158, 11);
+                        subheading('Pre-Launch Verification');
+                        bullet('Place a full test order through the entire workflow');
+                        bullet('Verify receipt prints with correct merchant details and VAT number');
+                        bullet('Process a test card payment and confirm Yoco settlement');
+                        bullet('Test split-billing with multiple payment methods');
+                        bullet('Run a Z-Report and verify totals balance');
+                        subheading('Onboarding Support');
+                        body('For setup assistance contact the onboarding team via WhatsApp: +27 66 039 2596');
+                        gap(4);
+                        body('Full Notion guide: https://yoco-technologies.notion.site/TABLE-By-YOCO-Site-Setup');
+
+                    } else if (title === 'Reporting Manual') {
+                        body('This manual mirrors the TABLE BY YOCO REPORTING page on Notion. It explains daily reconciliation, staff performance tracking, metric definitions, and how to read the Notion-based dashboards used for merchant oversight.');
+                        gap(6);
+                        heading('Daily Reconciliation', 37, 99, 235);
+                        subheading('End-of-Day Process');
+                        step(1, 'Run the Z-Report from the POS terminal');
+                        stepDetail('Navigate to Reports > Z-Report. This locks the current shift data and generates a summary of all transactions.');
+                        step(2, 'Compare expected vs actual cash');
+                        stepDetail('The Z-Report shows expected cash. Count the physical till and record the difference. Variances over R50 require a manager note.');
+                        step(3, 'Review voids, discounts, and comps');
+                        stepDetail('Check the Void Log for any items removed after sending to kitchen. All voids require a reason code and manager approval.');
+                        step(4, 'Verify card settlements match the Yoco dashboard');
+                        stepDetail('Cross-reference card totals on the Z-Report with the Yoco merchant portal. Settlement typically reflects within 24 hours.');
+                        gap(4);
+                        heading('Sales Analytics', 22, 163, 74);
+                        subheading('Key Metrics Dashboard');
+                        tableRow(['Metric', 'Description', 'Target'], true);
+                        tableRow(['Gross Revenue', 'Total sales before discounts/voids', 'Site-specific']);
+                        tableRow(['Net Revenue', 'Revenue after discounts and comps', 'Site-specific']);
+                        tableRow(['Average Check', 'Net revenue / number of covers', 'R180+']);
+                        tableRow(['Table Turn Time', 'Average minutes per table seating', '<75 min']);
+                        tableRow(['Void Rate', 'Void value / gross revenue', '<2%']);
+                        tableRow(['Discount Rate', 'Discount value / gross revenue', '<5%']);
+                        subheading('Category Performance');
+                        bullet('Track revenue contribution by category (Food vs Beverage split)');
+                        bullet('Monitor top-selling and worst-selling items weekly');
+                        bullet('Identify slow-moving menu items for potential removal or repricing');
+                        bullet('Compare category performance across different day-parts (lunch vs dinner)');
+                        gap(4);
+                        heading('Staff Performance', 168, 85, 247);
+                        subheading('Individual Metrics');
+                        bullet('Revenue per server — total sales attributed to each staff member');
+                        bullet('Average items per order — upselling effectiveness indicator');
+                        bullet('Void count per server — tracked for loss prevention');
+                        bullet('Speed of service — time from order entry to payment close');
+                        bullet('Tip tracking (where applicable) — optional field on receipt');
+                        subheading('Team Analytics');
+                        bullet('Shift comparison reports — morning vs evening team performance');
+                        bullet('Busiest periods heatmap — optimize staffing schedules');
+                        bullet('Cross-sell analysis — which item combinations drive highest checks');
+                        gap(4);
+                        heading('Inventory Reports', 245, 158, 11);
+                        subheading('Stock Management');
+                        bullet('Real-time stock levels updated with each sale');
+                        bullet('Low-stock alerts triggered at configurable thresholds');
+                        bullet('Wastage tracking — record spoilage, breakage, and staff meals');
+                        bullet('Variance reports — compare theoretical vs actual consumption');
+                        bullet('Supplier order suggestions based on consumption velocity');
+                        gap(6);
+                        body('Notion dashboard: https://yoco-technologies.notion.site/TABLE-BY-YOCO-REPORTING');
+
+                    } else if (title === 'API Reference') {
+                        body('This document covers the YOCO Dashboards Portal — the Enhanced Reporting tool available at tableadmin-lab.github.io. The portal allows you to import .xlsx or .csv sales reports and access advanced analytics across Sales, Fraud Detection, and Receipts.');
+                        gap(6);
+                        heading('Portal Settings & Import', 37, 99, 235);
+                        subheading('Data Import');
+                        body('Drop your .xlsx or .csv file exported from the POS to load data into the portal. Both the Sales Analytics and Fraud Detection dashboards use this imported data.');
+                        subheading('Trade Day Hours');
+                        body('Defines when your trading day starts and ends. This controls the time component of all date range fetches via the API credential system.');
+                        subheading('API Credential Cache');
+                        body('Your email and password can be remembered locally to save re-entering them each session. Set cache duration to 0 to disable caching entirely. Stored credentials can be cleared from the Settings panel.');
+                        gap(4);
+                        heading('Sales Analytics Dashboard', 22, 163, 74);
+                        subheading('Revenue & Performance Metrics');
+                        tableRow(['Metric', 'Description'], true);
+                        tableRow(['Gross Sales', 'Total sales before any deductions']);
+                        tableRow(['Total VAT', 'Tax component collected']);
+                        tableRow(['Discounts', 'Total discount value applied']);
+                        tableRow(['Refunds', 'Total refunds processed']);
+                        tableRow(['Voids Total', 'Value of voided items detected']);
+                        tableRow(['Total Tips', 'Sum of all tips collected']);
+                        tableRow(['Net Sales', 'Final trading revenue after all deductions']);
+                        subheading('Visual Analytics');
+                        bullet('Sales Volume by Hour — bar chart of hourly transaction volume');
+                        bullet('Payment Breakdown — pie chart of card vs cash vs other methods');
+                        bullet('Revenue by Site — multi-site revenue comparison');
+                        bullet('Efficiency Rating — average sale value per transaction');
+                        bullet('Closed Sales Total — Gross minus Discounts minus Refunds');
+                        gap(4);
+                        heading('Fraud Detection Analytics', 168, 85, 247);
+                        subheading('Risk & Anomalies');
+                        body('Upload Munch Excel (.xlsx) or CSV reports to detect suspicious staff behavior.');
+                        tableRow(['Metric', 'Description'], true);
+                        tableRow(['Total Voids', 'Aggregate value of all voided items']);
+                        tableRow(['Avg Tip Ratio', 'Average tip percentage vs sale amount']);
+                        tableRow(['High Risk Count', 'Number of flagged suspicious transactions']);
+                        tableRow(['Total Sales', 'Total sales for the analysed period']);
+                        subheading('Analysis Tools');
+                        bullet('Tip Distribution — histogram of tip amounts across transactions');
+                        bullet('High Tip Ratios — flags abnormally high tips for investigation');
+                        bullet('Void Audit — itemised list of all voids with reasons and staff');
+                        bullet('Bill Parking — detects bills left open or parked for extended periods');
+                        gap(4);
+                        heading('Transaction & Staff Logs', 245, 158, 11);
+                        subheading('Receipts Journal');
+                        body('Chronological ledger of all sales transactions showing: Receipt #, Order #, Date/Time, Cashier, Site, Payment Method, Bill Total, VAT, and Discount per transaction.');
+                        subheading('Employee Performance Matrix');
+                        body('Revenue contribution audit by staff member — tracks sales, tips, voids, and average check per employee to identify top performers and flag anomalies.');
+                        subheading('Open Tables');
+                        body('Highlights tables with outstanding (unpaid) bills. Used to track tables that have been left open without completed payment.');
+                        subheading('Transaction Audit Log');
+                        body('Detailed itemised view per invoice — shows Invoice #, Bill Total, Sales Total, Tip Total, Order #, VAT, Discount, and full itemised sale breakdown.');
+                        gap(6);
+                        body('Dashboards Portal: https://tableadmin-lab.github.io/Enhanced_Reporting_Api/');
+                    }
+
+                    drawFooter();
+                    doc.save(fileName);
+                } catch (err) {
+                    console.error('PDF generation error:', err);
+                }
+            }, 500);
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .tooltip-box {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            transform: translateY(10px);
+        }
+
+        .tooltip-trigger:hover .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(15, 23, 42, 0.98));
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+
+    <!-- Hero Header with Image -->
+    <header class="relative h-[450px] w-full overflow-hidden">
+        <!-- Wide Background Image -->
+        <img src="Screenshot_2025-11-06_at_15.40.08.webp" alt="Yoco POS Wide"
+            class="absolute inset-0 w-full h-full object-cover object-center scale-105"
+            onerror="this.src='https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&q=80&w=2070'">
+
+        <!-- Overlay -->
+        <div class="absolute inset-0 hero-gradient dark:from-slate-900/40 dark:to-slate-950"></div>
+
+        <!-- Header Content -->
+        <div class="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col">
+            <!-- Top Nav -->
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center gap-4">
+                    <!-- Brand Logo Image -->
+                    <div
+                        class="w-12 h-12 rounded-xl shadow-2xl overflow-hidden border-2 border-white/20 bg-white flex items-center justify-center">
+                        <img src="Yoco_-_Table.webp" alt="Table Logo" class="w-full h-full object-contain p-1">
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-white leading-tight">Table By <span
+                                class="text-blue-400">YOCO</span></h1>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-blue-200/70">Resource
+                            Hub</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex flex-col text-right mr-2 text-white/80">
+                        <span class="text-xs font-semibold uppercase tracking-widest">System Status</span>
+                        <span class="text-[10px] text-green-400 flex items-center justify-end gap-1 font-bold">
+                            <i class="fas fa-circle text-[6px] animate-pulse"></i> Operational
+                        </span>
+                    </div>
+                    <button onclick="toggleTheme()"
+                        class="p-2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all flex items-center justify-center border border-white/20 shadow-lg">
+                        <i class="fas fa-sun dark:hidden"></i>
+                        <i class="fas fa-moon hidden dark:block"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hero Text -->
+            <div class="mt-auto pb-16">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">Merchant Success Portal
+                </h2>
+                <p class="text-lg text-blue-100 max-w-2xl font-medium opacity-90 leading-relaxed">
+                    Access centralized documentation and training modules for the Table ecosystem. Designed for internal
+                    staff and merchant success.
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow -mt-12 relative z-20">
+        <!-- Resource Grid -->
+        <section class="max-w-6xl mx-auto px-6 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Training Material Card -->
+                <div
+                    class="card-hover bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 flex flex-col relative group">
+                    <div class="absolute top-6 right-6 flex items-center gap-4">
+                        <div class="relative tooltip-trigger">
+                            <i
+                                class="fas fa-circle-info text-gray-300 dark:text-slate-600 hover:text-blue-500 cursor-help transition-colors text-lg"></i>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl shadow-2xl z-20 pointer-events-none">
+                                <p class="font-bold mb-1 border-b border-white/10 pb-1">Section Details</p>
+                                Full training curriculum for staff. Covers floor management, split-billing, and
+                                inventory basics.
+                            </div>
+                        </div>
+                        <div class="relative tooltip-trigger">
+                            <button onclick="showDownloadToast('Training_Guide_v2.pdf')"
+                                class="text-gray-300 dark:text-slate-600 hover:text-red-500 transition-colors text-lg">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-48 p-2 bg-slate-800 text-white text-[10px] text-center rounded-lg shadow-lg z-20 pointer-events-none">
+                                Download Detailed PDF Guide
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-graduation-cap text-blue-600 dark:text-blue-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Training Material</h3>
+                    <p class="text-gray-600 dark:text-slate-400 flex-grow mb-8 text-sm">Interactive lessons and video
+                        modules to master the Table front-of-house operations.</p>
+                    <a href="https://tableadmin-lab.github.io/TableTraining/" target="_blank"
+                        class="w-full text-center bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 transition-all text-sm">
+                        Open Training Portal <i class="fas fa-external-link-alt ml-2 text-[10px]"></i>
+                    </a>
+                </div>
+
+                <!-- Onboarding Card -->
+                <div
+                    class="card-hover bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 flex flex-col relative group">
+                    <div class="absolute top-6 right-6 flex items-center gap-4">
+                        <div class="relative tooltip-trigger">
+                            <i
+                                class="fas fa-circle-info text-gray-300 dark:text-slate-600 hover:text-green-500 cursor-help transition-colors text-lg"></i>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl shadow-2xl z-20 pointer-events-none">
+                                <p class="font-bold mb-1 border-b border-white/10 pb-1">Setup Information</p>
+                                Step-by-step videos for new site deployment. Explains standard vs. pro setup sheets.
+                            </div>
+                        </div>
+                        <div class="relative tooltip-trigger">
+                            <button onclick="showDownloadToast('Onboarding_Specs.pdf')"
+                                class="text-gray-300 dark:text-slate-600 hover:text-red-500 transition-colors text-lg">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-48 p-2 bg-slate-800 text-white text-[10px] text-center rounded-lg shadow-lg z-20 pointer-events-none">
+                                Download Onboarding PDF
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-rocket text-green-600 dark:text-green-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Merchant Onboarding</h3>
+                    <p class="text-gray-600 dark:text-slate-400 flex-grow mb-8 text-sm">Video material for format
+                        selection and detailed setup sheet instructions.</p>
+                    <a href="https://yoco-technologies.notion.site/TABLE-By-YOCO-Site-Setup-Inputs-Onboarding-2a2ba43eb1358064909bc0b396843e46?pvs=74"
+                        target="_blank"
+                        class="w-full text-center bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 py-3 rounded-xl font-semibold hover:bg-green-600 hover:text-white dark:hover:bg-green-600 transition-all text-sm">
+                        Access Setup Guide <i class="fas fa-external-link-alt ml-2 text-[10px]"></i>
+                    </a>
+                </div>
+
+                <!-- Standard Reporting Card -->
+                <div
+                    class="card-hover bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 flex flex-col relative group">
+                    <div class="absolute top-6 right-6 flex items-center gap-4">
+                        <div class="relative tooltip-trigger">
+                            <i
+                                class="fas fa-circle-info text-gray-300 dark:text-slate-600 hover:text-purple-500 cursor-help transition-colors text-lg"></i>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl shadow-2xl z-20 pointer-events-none">
+                                <p class="font-bold mb-1 border-b border-white/10 pb-1">Reporting Help</p>
+                                Explains daily reconciliation, staff performance tracking, and how to read the Notion
+                                dashboard.
+                            </div>
+                        </div>
+                        <div class="relative tooltip-trigger">
+                            <button onclick="showDownloadToast('Reporting_Manual.pdf')"
+                                class="text-gray-300 dark:text-slate-600 hover:text-red-500 transition-colors text-lg">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-48 p-2 bg-slate-800 text-white text-[10px] text-center rounded-lg shadow-lg z-20 pointer-events-none">
+                                Download Reporting PDF
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-chart-line text-purple-600 dark:text-purple-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Reporting Explanation</h3>
+                    <p class="text-gray-600 dark:text-slate-400 flex-grow mb-8 text-sm">Notion-based documentation
+                        explaining metric definitions and dashboard use.</p>
+                    <a href="https://yoco-technologies.notion.site/TABLE-BY-YOCO-REPORTING-320ba43eb13580ada774d04062a2b07a"
+                        target="_blank"
+                        class="w-full text-center bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 py-3 rounded-xl font-semibold hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all text-sm">
+                        Open Notion Docs <i class="fas fa-external-link-alt ml-2 text-[10px]"></i>
+                    </a>
+                </div>
+
+                <!-- API Reporting Card -->
+                <div
+                    class="card-hover bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 flex flex-col relative group">
+                    <div class="absolute top-6 right-6 flex items-center gap-4">
+                        <div class="relative tooltip-trigger">
+                            <i
+                                class="fas fa-circle-info text-gray-300 dark:text-slate-600 hover:text-amber-500 cursor-help transition-colors text-lg"></i>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl shadow-2xl z-20 pointer-events-none">
+                                <p class="font-bold mb-1 border-b border-white/10 pb-1">API & Integration</p>
+                                Technical details for merchants using API logins. Export raw data for 3rd party BI
+                                tools.
+                            </div>
+                        </div>
+                        <div class="relative tooltip-trigger">
+                            <button onclick="showDownloadToast('API_Reference.pdf')"
+                                class="text-gray-300 dark:text-slate-600 hover:text-red-500 transition-colors text-lg">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <div
+                                class="tooltip-box absolute bottom-full right-0 mb-3 w-48 p-2 bg-slate-800 text-white text-[10px] text-center rounded-lg shadow-lg z-20 pointer-events-none">
+                                Download Technical PDF
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-code text-amber-600 dark:text-amber-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Enhanced Reporting (API)</h3>
+                    <p class="text-gray-600 dark:text-slate-400 flex-grow mb-8 text-sm">High-detail reports using direct
+                        API access for advanced business analytics.</p>
+                    <a href="https://tableadmin-lab.github.io/Enhanced_Reporting_Api/" target="_blank"
+                        class="w-full text-center bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 py-3 rounded-xl font-semibold hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 transition-all text-sm">
+                        Launch API Portal <i class="fas fa-external-link-alt ml-2 text-[10px]"></i>
+                    </a>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Support Section -->
+        <section class="pb-16 px-6">
+            <div
+                class="max-w-6xl mx-auto bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden border border-white/5 shadow-2xl">
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2 text-white">Support</h2>
+                        <p class="text-slate-400 text-sm">Need immediate assistance? Contact our team via WhatsApp for
+                            quick setup help and technical queries.</p>
+                    </div>
+                    <a href="https://wa.me/27660392596" target="_blank"
+                        class="bg-green-600 hover:bg-green-700 px-8 py-4 rounded-full font-bold transition-all whitespace-nowrap flex items-center gap-3 shadow-lg hover:shadow-green-900/20">
+                        <i class="fab fa-whatsapp text-2xl text-white"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast UI -->
+    <div id="toast"
+        class="fixed bottom-8 right-8 bg-slate-950 dark:bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-full opacity-0 flex items-center gap-3 z-[100] border border-white/10">
+        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <i class="fas fa-download text-xs"></i>
+        </div>
+        <span id="toast-text" class="text-xs font-semibold">Generating document...</span>
+    </div>
+
+</body>
+
+</html>
